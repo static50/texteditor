@@ -88,10 +88,9 @@ class screen:
        
         stdscr.erase()
 
-        try:
-            stdscr.addstr(0, 0, ''.join(self.file_buffer))
-        except: # if the buffer is too large for the screen
-            
+        
+        stdscr.addstr(0, 0, ''.join(self.file_buffer))
+        
         
         if self.save:
             stdscr.addstr(self.rows - 1, 10, " File {} saved ".format(self.file_obj.file_name))
@@ -136,6 +135,8 @@ class screen:
         pass 
         
     def cursor_to_prev_line(self):
+        counted, index = self.calculate_index()
+
         self.x = self.prev_line_length()
         # delete the newline
         del self.file_buffer[index - 1]
