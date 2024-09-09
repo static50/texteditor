@@ -3,7 +3,7 @@ import time
 
 class screen:
     newselect = 0 # stays the same across class instances so we know which buffer we're currently updating
-    
+    # test
     
         
     def __init__(self, fileobjects, select, stdscr):
