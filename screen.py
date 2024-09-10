@@ -152,9 +152,7 @@ class screen:
         self.y += 1 
         count = 0 
         counted, index = self.calculate_index()
-        if index == len(self.file_buffer):
-            self.y -= 0 
-            return 0
+        
             
         for i in range(index, len(self.file_buffer)):
             if self.file_buffer[i] == '\n':
