@@ -134,7 +134,7 @@ class screen:
         elif self.checkbounds('x', True): # if this fails, it means that the user is writing a line longer than the terminal width
             self.x += 1
             
-    def get_prev_line_length(self):
+    def get_prev_line_length(self, index):
         counted, index = self.calculate_index()
         i = (index - self.x) - 2 # index - 1 is the newline, index - 2 is the character next to it
         count = 0 
@@ -151,10 +151,6 @@ class screen:
         self.y += 1 
         count = 0 
         counted, index = self.calculate_index()
-        
-        if index == len(self.file_buffer):
-            self.y -= 0 
-            return 0
             
         for i in range(index, len(self.file_buffer)):
             if self.file_buffer[i] == '\n':
@@ -163,24 +159,38 @@ class screen:
             count += 1
         self.x = self.prev_x
         return 0
-        
+    
     def cursorup(self):
         prev_line_length = self.get_prev_line_length()
         
-        
-              
         if prev_line_length < self.x:
             self.x = prev_line_length
             
         return 
-
+    def is_last_line(self, index):
+        i = 0 
+        while True:
+            try:
+                if self.file_buffer[index+i] == '\n':
+                    return False
+            except:
+                return True
+            i += 1 
+                
     def cursordown(self):
+      
+        counted, index = self.calculate_index()
+        if self.is_last_line(index):
+            return
+            
         next_line_length = self.get_next_line_length()
-        
+       
         if next_line_length < self.x:
             self.x = next_line_length          
         else:
             self.x = self.prev_x
+       
+       
         return
         
     def cursor_to_prev_line(self):
