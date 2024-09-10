@@ -174,7 +174,13 @@ class screen:
         return 
 
     def cursordown(self):
+        counted, index = self.calculate_index()
+        if self.is_last_line(index):
+            return 
+            
+        
         next_line_length = self.get_next_line_length()
+        
         
         if next_line_length < self.x:
             self.x = next_line_length          
@@ -182,10 +188,19 @@ class screen:
             self.x = self.prev_x
         return
         
+    def is_last_line(self, index):
+        i = 0
+        while True:
+            try:
+                if self.file_buffer[index+i] == '\n':
+                    return False
+            except:
+                return True
+            i += 1 
+        
     def cursor_to_prev_line(self):
         counted, index = self.calculate_index()
         newline_on_prev_line = index - 1
-        
         self.x = self.get_prev_line_length()
         
         del self.file_buffer[newline_on_prev_line] # delete the newline
