@@ -125,17 +125,25 @@ class screen:
             self.file_buffer = self.file_buffer[:index] + [chr(key)] + self.file_buffer[index:]
         except:
             self.file_buffer = self.file_buffer[:index] + [key] + self.file_buffer[index:]
-
+        
         if key == '\n': 
             self.y += 1
             self.x = 0      
+<<<<<<< HEAD
             if index == len(self.file_buffer):
                 self.file_buffer = self.file_buffer[:index] + [chr('\n')] + [chr('\n')] + self.file_buffer[index:]    
+=======
+           
+>>>>>>> main
                 
         elif self.checkbounds('x', True): # if this fails, it means that the user is writing a line longer than the terminal width
             self.x += 1
             
+<<<<<<< HEAD
     def get_prev_line_length(self):
+=======
+    def get_prev_line_length(self, index):
+>>>>>>> main
         counted, index = self.calculate_index()
         i = (index - self.x) - 2 # index - 1 is the newline, index - 2 is the character next to it
         count = 0 
@@ -152,7 +160,10 @@ class screen:
         self.y += 1 
         count = 0 
         counted, index = self.calculate_index()
+<<<<<<< HEAD
         
+=======
+>>>>>>> main
             
         for i in range(index, len(self.file_buffer)):
             if self.file_buffer[i] == '\n':
@@ -161,6 +172,7 @@ class screen:
             count += 1
         self.x = self.prev_x
         return 0
+<<<<<<< HEAD
         
     def cursorup(self):
         prev_line_length = self.get_prev_line_length()
@@ -168,10 +180,17 @@ class screen:
         if not self.get_prev_line_length():
               pass 
               
+=======
+    
+    def cursorup(self):
+        prev_line_length = self.get_prev_line_length()
+        
+>>>>>>> main
         if prev_line_length < self.x:
             self.x = prev_line_length
             
         return 
+<<<<<<< HEAD
 
     def cursordown(self):
         counted, index = self.calculate_index()
@@ -182,10 +201,31 @@ class screen:
         next_line_length = self.get_next_line_length()
         
         
+=======
+    def is_last_line(self, index):
+        i = 0 
+        while True:
+            try:
+                if self.file_buffer[index+i] == '\n':
+                    return False
+            except:
+                return True
+            i += 1 
+                
+    def cursordown(self):
+      
+        counted, index = self.calculate_index()
+        if self.is_last_line(index):
+            return
+            
+        next_line_length = self.get_next_line_length()
+       
+>>>>>>> main
         if next_line_length < self.x:
             self.x = next_line_length          
         else:
             self.x = self.prev_x
+<<<<<<< HEAD
         return
         
     def is_last_line(self, index):
@@ -197,10 +237,19 @@ class screen:
             except:
                 return True
             i += 1 
+=======
+       
+       
+        return
+>>>>>>> main
         
     def cursor_to_prev_line(self):
         counted, index = self.calculate_index()
         newline_on_prev_line = index - 1
+<<<<<<< HEAD
+=======
+        
+>>>>>>> main
         self.x = self.get_prev_line_length()
         
         del self.file_buffer[newline_on_prev_line] # delete the newline
