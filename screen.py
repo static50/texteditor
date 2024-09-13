@@ -113,7 +113,7 @@ class screen:
             self.save = False
             time.sleep(0.5)
             
-        stdscr.addstr(self.rows-3, 1, "index: {} maximum index: {} buffer: {}".format(index, len(self.file_buffer), self.file_buffer))
+        # stdscr.addstr(self.rows-3, 1, "index: {} maximum index: {} buffer: {}".format(index, len(self.file_buffer), self.file_buffer))
         stdscr.addstr(self.y, self.x, "")
         stdscr.refresh()
         return True, self.select
@@ -170,7 +170,8 @@ class screen:
               
         if prev_line_length < self.x:
             self.x = prev_line_length
-            
+        else:
+            self.x = self.prev_x 
         return 
 
     def cursordown(self):
