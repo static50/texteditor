@@ -51,24 +51,18 @@ class screen:
             key = stdscr.getch()
         except:
             key = None
-        
-
-        
-        
+      
         if key == curses.KEY_UP and self.checkbounds('y', False):
             self.cursorup(stdscr)
-            self.y -= 1
             
         if key == curses.KEY_DOWN and self.checkbounds('y', True):
             self.cursordown()
             
         if key == curses.KEY_LEFT and self.checkbounds('x', False):
-            self.x -= 1
-            self.prev_x = self.x
+            self.cursorleft()
             
         if key == curses.KEY_RIGHT and self.checkbounds('x', True):
-            self.x += 1
-            self.prev_x = self.x
+            self.cursorright()
             
         if 32 < key <= 126:
             self.editbuffer(stdscr, key, True)
@@ -81,7 +75,7 @@ class screen:
             
             
             
-        if key == 32:
+        if key == 32: # space bar 
             self.editbuffer(stdscr, ' ', True)
             
         if key == 9: # tab key 
@@ -93,12 +87,12 @@ class screen:
             self.save = True
             self.file_obj.savefile(self.file_obj.file, self.file_buffer)
             
-        if key == 27:
+        if key == 27: # [ key
             if screen.newselect > 0: 
                 screen.newselect -= 1 
                 return True, screen.newselect
 
-        if key == 29:
+        if key == 29: # ] key 
             if screen.newselect < len(fileobjects) - 1:
                 screen.newselect += 1 
                 return True, screen.newselect
@@ -131,14 +125,14 @@ class screen:
 
         if key == '\n': 
             self.y += 1
-            self.x = 0      
-            if index == len(self.file_buffer):
-                self.file_buffer = self.file_buffer[:index] + [chr('\n')] + [chr('\n')] + self.file_buffer[index:]    
-                
+            self.x = 0          
         elif self.checkbounds('x', True): # if this fails, it means that the user is writing a line longer than the terminal width
             self.x += 1
             
-    def get_prev_line_length(self):
+        if self.is_last_line(index) and self.file_buffer[len(self.file_buffer)-1] != '\n':
+            self.file_buffer.insert(len(self.file_buffer), '\n')
+            
+    def get_line_length(self, direction=-1):
         counted, index = self.calculate_index()
         start_of_cur_line = (index - self.x)
         i = start_of_cur_line - 2 # places the cursor to the left of the 
@@ -147,9 +141,8 @@ class screen:
         while True:
             if self.file_buffer[i] == '\n':
                 return count
-                break
             count += 1
-            i -= 1 # traverse the list in reverse
+            i += direction # traverse the list in the direction, possible directions are -1 for prev line and 1 for current line
             
     def get_next_line_length(self):
         self.x = 0
@@ -166,25 +159,40 @@ class screen:
         self.x = self.prev_x
         return 0
         
-    def cursorup(self, stdscr):
-        prev_line_length = self.get_prev_line_length()
+    def get_current_line_length(self):
+        counted, index = self.calculate_index()
+        start_of_line = index - self.x 
         
-        if not self.get_prev_line_length():
+        i = start_of_line
+        count = 0 
+        
+        while True:
+            if self.file_buffer[i] == '\n':
+                return count 
+            count += 1 
+            i += 1 
+        
+    def cursorup(self, stdscr):
+        prev_line_length = self.get_line_length(-1)
+        
+        if not self.get_line_length(-1):
+              self.y -= 1
               return 
               
         if prev_line_length < self.x:
             self.x = prev_line_length
-        else:
-            if prev_line_length >= self.prev_x:
+        elif prev_line_length >= self.prev_x:
                 self.x = self.prev_x 
-            else:
-                self.x = prev_line_length
+        else:
+            self.x = prev_line_length
+        self.y -= 1
         return 
 
     def cursordown(self):
         counted, index = self.calculate_index()
         
         if self.is_last_line(index):
+            self.file_buffer.insert(len(self.file_buffer)-1, '\n')
             return 
             
         next_line_length = self.get_next_line_length()
@@ -195,6 +203,18 @@ class screen:
         else:
             self.x = self.prev_x
         return
+        
+    def cursorright(self):
+        # current_line_length = self.get_line_length(1)
+        #if current_line_length == self.x:
+        #        return
+        self.x += 1
+        self.prev_x = self.x
+        return 
+        
+    def cursorleft(self):
+        self.x -= 1
+        self.prev_x = self.x
         
     def is_last_line(self, index):
         i = 0
@@ -218,7 +238,7 @@ class screen:
         counted, index = self.calculate_index()
         newline_on_prev_line = index - 1
         
-        if self.checkbounds('x', False): # if the user is not deleting at the beginning of a line
+        if self.checkbounds('x', False) and index != 0: # if the user is not deleting at the beginning of a line
             del self.file_buffer[newline_on_prev_line]
             self.x -= 1
         else:
@@ -234,11 +254,6 @@ class screen:
             self.append(stdscr, key)      
         else:  
             self.removelastchar(stdscr)
-
-# cursor algorithm
-"""
-Currently there is a bug where sometimes the cursor doesn't go back. My first instinct is to check the buffer for newlines and to see if the absence of one is upsetting it 
-"""
 
 # how to implement left/right up/down scrolling
 """
