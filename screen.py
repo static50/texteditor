@@ -54,7 +54,7 @@ class screen:
         if key == curses.KEY_UP and self.checkbounds('y', False):
             self.y -= 1
         if key == curses.KEY_DOWN and self.checkbounds('y', True):
-            self.y += 1
+            self.cursordown()
         if key == curses.KEY_LEFT and self.checkbounds('x', False):
             self.x -= 1
         if key == curses.KEY_RIGHT and self.checkbounds('x', True):
@@ -131,8 +131,24 @@ class screen:
     def cursorup(self):
         pass
 
+    def is_last_line(self, index):
+        i = 0
+        while True:
+            try:
+                if self.file_buffer[index+i] == '\n':
+                    return False
+            except:
+                return True 
+            i += 1 
+        
     def cursordown(self):
-        pass 
+        counted, index = self.calculate_index()
+
+        if self.is_last_line(index):
+            return 
+            
+        self.y += 1
+         
         
     def cursor_to_prev_line(self):
         counted, index = self.calculate_index()
