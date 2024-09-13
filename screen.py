@@ -7,7 +7,9 @@ class screen:
     def __init__(self, fileobjects, select, stdscr):
         self.file_obj = fileobjects[select]
         self.file_buffer = fileobjects[select].buffer
-        self.rows, self.cols = stdscr.getmaxyx()
+        self.rows, self.cols  = stdscr.getmaxyx()
+        self.rows -= 1 
+        self.cols -= 1 
         self.y, self.x = 0, 0
         self.save = False
         self.select = select
@@ -50,10 +52,11 @@ class screen:
         except:
             key = None
         
+
         
         
         if key == curses.KEY_UP and self.checkbounds('y', False):
-            # self.cursorup()
+            self.cursorup(stdscr)
             self.y -= 1
             
         if key == curses.KEY_DOWN and self.checkbounds('y', True):
@@ -113,7 +116,7 @@ class screen:
             self.save = False
             time.sleep(0.5)
             
-        # stdscr.addstr(self.rows-3, 1, "index: {} maximum index: {} buffer: {}".format(index, len(self.file_buffer), self.file_buffer))
+        stdscr.addstr(self.rows-10, 1, "buffer: {}".format(self.file_buffer))
         stdscr.addstr(self.y, self.x, "")
         stdscr.refresh()
         return True, self.select
@@ -137,7 +140,8 @@ class screen:
             
     def get_prev_line_length(self):
         counted, index = self.calculate_index()
-        i = (index - self.x) - 2 # index - 1 is the newline, index - 2 is the character next to it
+        start_of_cur_line = (index - self.x)
+        i = start_of_cur_line - 2 # places the cursor to the left of the 
         count = 0 
         
         while True:
@@ -162,16 +166,19 @@ class screen:
         self.x = self.prev_x
         return 0
         
-    def cursorup(self):
+    def cursorup(self, stdscr):
         prev_line_length = self.get_prev_line_length()
         
         if not self.get_prev_line_length():
-              pass 
+              return 
               
         if prev_line_length < self.x:
             self.x = prev_line_length
         else:
-            self.x = self.prev_x 
+            if prev_line_length >= self.prev_x:
+                self.x = self.prev_x 
+            else:
+                self.x = prev_line_length
         return 
 
     def cursordown(self):
@@ -230,19 +237,7 @@ class screen:
 
 # cursor algorithm
 """
-store last column position of the column 
-if key is down/up
-    cursor is brought to the end of the next line if the next line is shorter to or equal to the last line
-    if not, the cursor is brought to the last cursor position
-
-if key == curses.up:
-    last_column_pos = self.x
-    if (length_of_next_line() <= current_line)
-        
-
-if key is left or right:
-    update the column position unless the cursor is already at the end of the line then
-    move the cursor to the start of the nextline  
+Currently there is a bug where sometimes the cursor doesn't go back. My first instinct is to check the buffer for newlines and to see if the absence of one is upsetting it 
 """
 
 # how to implement left/right up/down scrolling
