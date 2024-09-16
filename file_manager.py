@@ -15,12 +15,7 @@ class File:
       stdscr.refresh()
       answer = stdscr.getkey().upper()
       if answer == 'Y':
-        stdscr.erase()
-        stdscr.addstr("\n In which directory?")
-        stdscr.refresh()
-        file_path = stdscr.getstr().decode()
-        file_path = file_path + file_name
-        self.file = open(file_path, 'w+') 
+        self.file = open(file_name, 'w+') 
       if answer == 'N':
         raise FileNotFoundError(f"file {file_name} not found and not created.") 
       # make the file if its not found
@@ -36,8 +31,13 @@ class File:
     return 
 
   def get_buffer_dimensions():
-    pass
-
+    if not self.buffer:
+        return (0, 0)
+    lines = ''.join(self.buffer).split('\n')
+    rows = len(lines)
+    cols = max(len(line) for line in lines) if lines else 0
+    return (rows, cols)
+  
   def savefile(self, file, newbuffer):
     self.file.seek(0) # move file pointer to the beginning
     self.file.truncate() # from the file pointer onwards, delete to the end until a EOF is found 

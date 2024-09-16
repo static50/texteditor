@@ -10,7 +10,7 @@ class screen:
         self.rows, self.cols  = stdscr.getmaxyx()
         self.rows -= 1 
         self.cols -= 1 
-        self.y, self.x = 1, 1
+        self.y, self.x = 0, 0
         self.save = False
         self.select = select
         self.prev_x = 0 
@@ -81,11 +81,11 @@ class screen:
         if key == 32: # space bar 
             self.editbuffer(stdscr, ' ', True)
             
-        if key == 19: # tab key 
+        if key == 9: # tab key 
             for i in range(4):
                 self.editbuffer(stdscr, ' ', True)
                 
-        if key == 9: # ctrl+s
+        if key == curses.KEY_F2: # ctrl+s
             # save the file
             self.save = True
             self.file_obj.savefile(self.file_obj.file, self.file_buffer)
@@ -113,7 +113,7 @@ class screen:
             self.save = False
             time.sleep(0.5)
             
-        stdscr.addstr(self.rows-10, 1, "index: {} buffer length: {} \n {} ".format(self.istrue, self.file_buffer[len(self.file_buffer)-1], self.file_buffer))
+        stdscr.addstr(self.rows-10, 1, "{} x coordinate: {}".format(self.file_buffer, self.x))
         stdscr.addstr(self.y, self.x, "")
         stdscr.refresh()
         return True, self.select
@@ -208,6 +208,10 @@ class screen:
         return
         
     def cursorright(self):
+        line_len = self.get_current_line_length()
+        if self.x == line_len:
+            return
+        
         self.x += 1
         self.prev_x = self.x
         return 
