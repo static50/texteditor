@@ -222,7 +222,18 @@ class screen:
             self.x = prev_line_length
         self.y -= 1
         return 
-    
+
+    def is_last_line(self, index):
+        i = 0 
+
+        while True:
+            try:
+                if self.file_buffer[index+i] == '\n':
+                    return False
+            except:
+                return True 
+            i += 1 
+      
     def cursordown(self):
         index = self.calculate_index(self.y, self.x)
 
