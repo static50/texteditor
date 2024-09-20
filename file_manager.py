@@ -26,8 +26,7 @@ class File:
     
   def createnewbuffer(self):
     text = self.file.read() # a string containing the text from the file
-    self.buffer = list(text)
-    self.buffer.insert(0, '\n')    
+    self.buffer = list(text)   
     return 
 
   def get_buffer_dimensions():
