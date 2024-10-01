@@ -19,12 +19,9 @@ class screen:
         
         
         self.viewport_top = 0 
-        self.viewport_bottom = self.calculate_index(self.rows, self.cols)
+        self.viewport_bottom = self.count_chars_on_screen() 
         
-        self.draw_start = 0 
-        self.draw_end = self.count_newlines()  
-        self.draw_buffer = self.file_buffer[self.viewport_top + self.draw_start : 
-                                                    self.viewport_bottom + self.rows]
+        self.draw_buffer = self.file_buffer[self.viewport_top : self.viewport_bottom ] 
         
         stdscr.nodelay(True)
         
@@ -32,10 +29,10 @@ class screen:
     def checkbounds(self, axis, is_positive_direction=True):
         if axis == 'y':
             if is_positive_direction:
-                reaches_bounds = self.y < self.rows - 1
-                if reaches_bounds:
-                    self.viewport_bottom += 1
-                return reaches_bounds 
+                if self.y == self.rows - 1:
+                    self.set_viewports()
+                else:
+                    return self.y < self.rows - 1
             else:
                 return self.y > 0
         elif axis == 'x':
@@ -44,7 +41,22 @@ class screen:
             else:
                 return self.x > 0
         return False 
-                
+
+    def set_viewports(self): # called when we're at the last row of the screen
+        # self.viewport_bottom is always at self.x = 0 and the begining of the viewport
+        # to calculate the next bottom:
+        # find the length of the current line
+        # add bottom to the remaining length of the current line 
+        # add 2 to account for newline and bring us to the nextline
+
+        VT_len_line = self.get_line_length(self.viewport_top, 0, 1)
+        new_index = self.viewport_top + VT_len_line + 1  
+        self.viewport_top = new_index
+
+        VB_len_line = self.get_next_line_length(self.viewport_bottom)
+        new_index = self.viewport_bottom + VB_len_line + 1
+        self.viewport_bottom = new_index
+
     def calculate_index(self, rows, cols=0):
         newline = 0
         index = 0
@@ -59,7 +71,7 @@ class screen:
             
         return index  
         
-    def count_newlines(self):
+    def count_chars_on_screen(self):
         count = 0 
         
         for counted, ch in enumerate(self.file_buffer):
@@ -67,7 +79,7 @@ class screen:
                 count += 1
             if count == self.rows:
                 break
-        return count
+            return counted 
         
     def updateUI(self, stdscr):
         pass
@@ -93,14 +105,15 @@ class screen:
             self.cursorright()
             
         if 32 < key <= 126:
-            self.editbuffer(stdscr, key, True)
-            
+            self.editbuffer(stdscr, key, True)    
+            self.viewport_bottom = self.count_chars_on_screen()
+
         if key == curses.KEY_BACKSPACE or key == 127:
             self.editbuffer(stdscr, key, False)
-            
+            self.viewport_bottom = self.count_chars_on_screen() 
         if key == curses.KEY_ENTER or key == 10:
             self.editbuffer(stdscr, '\n', True)
-            
+            self.viewport_bottom = self.count_chars_on_screen() 
             
             
         if key == 32: # space bar 
@@ -127,11 +140,10 @@ class screen:
                       
         stdscr.erase()
 
-
-        self.draw_buffer = self.file_buffer[self.viewport_top + self.draw_start : 
-                                                          self.viewport_bottom + self.rows]
+        
+        self.draw_buffer = self.file_buffer[self.viewport_top : self.viewport_bottom ] 
                                                           
-        stdscr.addstr(0, 0, ''.join(self.file_buffer))
+        stdscr.addstr(0, 0, ''.join(self.draw_buffer))
         
         
         if self.save:
@@ -139,7 +151,7 @@ class screen:
             self.save = False
             time.sleep(0.5)
             
-        stdscr.addstr(self.rows-10, 1, "{}".format(self.file_buffer, self.x))
+        stdscr.addstr(self.rows-1, self.cols - 30, f"{self.viewport_top}, {self.viewport_bottom}")
         stdscr.addstr(self.y, self.x, "")
         stdscr.refresh()
         return True, self.select
@@ -161,10 +173,12 @@ class screen:
         if self.has_newline(index) is False and self.file_buffer[len(self.file_buffer)-1] != '\n':
             self.file_buffer.insert(len(self.file_buffer), '\n')
             
-    def get_line_length(self, index, direction=-1):
-        index = self.calculate_index(self.y, self.x)
-        start_of_cur_line = (index - self.x)
-        i = start_of_cur_line - 2 # places the cursor to the left of the 
+    def get_line_length(self, index, xpos, direction=-1):
+        start_of_cur_line = (index - xpos)
+        if direction == -1:
+            i = start_of_cur_line - 2 # places the cursor to the left of the 
+        else: 
+            i = start_of_cur_line
         count = 0 
         
         while True:
@@ -173,13 +187,9 @@ class screen:
             count += 1
             i += direction # traverse the list in the direction, possible directions are -1 for prev line and 1 for current line
             
-    def get_next_line_length(self):
-        self.x = 0
-        self.y += 1 
+    def get_next_line_length(self, index):
         count = 0 
-        index = self.calculate_index(self.y, self.x)
-        
-            
+         
         for i in range(index, len(self.file_buffer)):
             if self.file_buffer[i] == '\n':
                 self.x = self.prev_x
@@ -208,7 +218,7 @@ class screen:
         
     def cursorup(self, stdscr):
         index = self.calculate_index(self.y, self.x)
-        prev_line_length = self.get_line_length(index, -1)
+        prev_line_length = self.get_line_length(index, self.x, -1)
         
         if not prev_line_length:
               self.y -= 1
@@ -239,8 +249,11 @@ class screen:
 
         if self.has_newline(index) is False:
             return 
-            
-        next_line_length = self.get_next_line_length()
+
+        self.y += 1 
+        self.x = 0 
+        index = self.calculate_index(self.y, self.x)
+        next_line_length = self.get_next_line_length(index)
         
         
         if next_line_length < self.x:
@@ -264,7 +277,7 @@ class screen:
         
     def is_last_line(self, index):
         index = self.calculate_index(self.y, self.x)
-        line_len = self.get_line_length(len(self.file_buffer)-1, -1) 
+        line_len = self.get_line_length(len(self.file_buffer)-1, self.x, -1) 
         
         if index >= (len(self.file_buffer)-1)-line_len:
             return True
@@ -283,7 +296,7 @@ class screen:
     def cursor_to_prev_line(self):
         index = self.calculate_index(self.y, self.x)
         newline_on_prev_line = index - 1
-        self.x = self.get_line_length(index, -1)
+        self.x = self.get_line_length(index, self.x, -1)
         
         del self.file_buffer[newline_on_prev_line] # delete the newline
         self.y -= 1
