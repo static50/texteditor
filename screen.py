@@ -12,14 +12,14 @@ class screen:
         self.cols -= 1 
         self.y, self.x = 0, 0
         self.prev_x = 0 
-        
+
         self.save = False
         self.select = select
         
-        
+        self.hold_cursor = False 
         
         self.viewport_top = 0 
-        self.viewport_bottom = self.count_chars_on_screen() 
+        self.viewport_bottom = self.count_chars_on_screen()
         
         self.draw_buffer = self.file_buffer[self.viewport_top : self.viewport_bottom ] 
         
@@ -29,10 +29,9 @@ class screen:
     def checkbounds(self, axis, is_positive_direction=True):
         if axis == 'y':
             if is_positive_direction:
-                if self.y == self.rows - 1:
+                if self.y >= self.rows - 1: # this now returns True which is evaluated on cursordown 
                     self.set_viewports()
-                else:
-                    return self.y < self.rows - 1
+                    return True
             else:
                 return self.y > 0
         elif axis == 'x':
@@ -46,14 +45,14 @@ class screen:
         # self.viewport_bottom is always at self.x = 0 and the begining of the viewport
         # to calculate the next bottom:
         # find the length of the current line
-        # add bottom to the remaining length of the current line 
+        # add viewport_bottom or viewport_top to the remaining length of the current line 
         # add 2 to account for newline and bring us to the nextline
 
         VT_len_line = self.get_line_length(self.viewport_top, 0, 1)
         new_index = self.viewport_top + VT_len_line + 1  
         self.viewport_top = new_index
 
-        VB_len_line = self.get_next_line_length(self.viewport_bottom)
+        VB_len_line = self.get_next_line_length(self.viewport_bottom) 
         new_index = self.viewport_bottom + VB_len_line + 1
         self.viewport_bottom = new_index
 
@@ -73,13 +72,13 @@ class screen:
         
     def count_chars_on_screen(self):
         count = 0 
-        
         for counted, ch in enumerate(self.file_buffer):
             if ch == '\n':
                 count += 1
+
             if count == self.rows:
                 break
-            return counted 
+        return counted 
         
     def updateUI(self, stdscr):
         pass
@@ -92,10 +91,11 @@ class screen:
             
         
         
-        if key == curses.KEY_UP and self.checkbounds('y', False):
+        if key == curses.KEY_UP: 
             self.cursorup(stdscr)
             
-        if key == curses.KEY_DOWN and self.checkbounds('y', True):
+        if key == curses.KEY_DOWN:
+            self.hold_cursor = self.checkbounds('y', True)
             self.cursordown()
             
         if key == curses.KEY_LEFT and self.checkbounds('x', False):
@@ -119,7 +119,6 @@ class screen:
         if key == 32: # space bar 
             self.editbuffer(stdscr, ' ', True)
             
-        if key == 9: # tab key 
             for i in range(4):
                 self.editbuffer(stdscr, ' ', True)
                 
@@ -151,11 +150,18 @@ class screen:
             self.save = False
             time.sleep(0.5)
             
-        stdscr.addstr(self.rows-1, self.cols - 30, f"{self.viewport_top}, {self.viewport_bottom}")
-        stdscr.addstr(self.y, self.x, "")
+        stdscr.addstr(self.rows-1, self.cols - 30, f"{self.y}, {self.x}") 
+        self.updatecursor(stdscr) 
         stdscr.refresh()
+        
         return True, self.select
-    
+
+    def updatecursor(self, stdscr): 
+        if not self.hold_cursor:  
+            stdscr.addstr(self.y, self.x, "") 
+        else: 
+            stdscr.addstr(self.rows - 1, self.x, "") 
+       
     def append(self, stdscr, key):
         index = self.calculate_index(self.y, self.x)
 
@@ -186,7 +192,8 @@ class screen:
                 return count
             count += 1
             i += direction # traverse the list in the direction, possible directions are -1 for prev line and 1 for current line
-            
+
+    # gets the next line length provided any index of the previous line        
     def get_next_line_length(self, index):
         count = 0 
          
